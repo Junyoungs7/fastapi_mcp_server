@@ -5,29 +5,32 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.routing import Mount, Route
 from starlette.responses import Response
-
+from contextlib import asynccontextmanager
 
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
-import services.customer_service as customer_service
+
+from dbconnection.diablo import init_db_connection, close_db_connection
+import tools.customer_tool as customer_tool
+import tools.emp_tool as emp_tool
 
 load_dotenv()
 
 mcp = FastMCP("fastapi-mcp-server")
 
-@mcp.tool()
-async def get_customers(name: str, phone: str = None, email: str = None):
-    """Retrieve customer information from the database.
+customer_tool.register_tools(mcp)
+emp_tool.register_tools(mcp)
 
-    Args:
-        name (str): The name of the customer.
-        phone (str, optional): The phone number of the customer. Defaults to None.
-        email (str, optional): The email address of the customer. Defaults to None.
 
-    Returns:
-        dict: A dictionary containing customer information.
-    """
-    return await customer_service.search_db(name=name, phone=phone, email=email)
+# Initialize the database connection
+@asynccontextmanager
+async def lifespan(app: Starlette):
+    print("📦 DB 연결 초기화 중...")
+    init_db_connection()
+    yield
+    print("🧹 DB 연결 정리 중...")
+    close_db_connection()
+
 
 
 def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlette:
@@ -53,18 +56,10 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
             Route("/sse", endpoint=handle_sse),
             Mount("/messages/", app=sse.handle_post_message),
         ],
+        lifespan=lifespan,
     )
 
 if __name__ == "__main__":
-    # stdio는 표준 입력/출력 스트림을 사용하여 MCP 서버를 실행합니다.
-    # 이 모드에서는 MCP 서버가 표준 입력을 통해 요청을 받고, 표준 출력을 통해 응답을 반환합니다.
-    # 이는 주로 개발 및 테스트 환경에서 사용됩니다.
-    # 만약 각각 서버를 실행하고 싶다면, 아래와 같이 transport를 변경할 수 있습니다.
-    # mcp.run(transport="sse")  # SSE (Server-Sent Events) 모드
-    # print("Starting FastMCP server...")
-    # mcp.run(transport="sse")
-    # import uvicorn
-    # uvicorn.run(app, host="0.0.0.0", port=8001)
     mcp_server = mcp._mcp_server
     
     import argparse
@@ -76,5 +71,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     starlette_app = create_starlette_app(mcp_server, debug=True)
+    
 
     uvicorn.run(starlette_app, host=args.host, port=args.port)
