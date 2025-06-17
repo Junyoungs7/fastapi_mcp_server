@@ -29,10 +29,27 @@ async def insert_meeting_room(resv_type: str, room_name: str, room_floor: str, m
     """
     params = (resv_type, room_name, room_floor, meet_type, subject, sch_date, sch_end_date, start_time, end_time, team_name, emp_code, emp_name)
     result = db.execute_query(query, params)
+    
 
     if result == "중복":
         result = "이미 예약된 시간입니다."
     else:
         result = "예약이 완료되었습니다."
+
+    return result
+
+async def update_meeting_room(seq_no: str, resv_type: str, room_name: str, room_floor: str, meet_type: str, subject: str,
+                            sch_date: str, sch_end_date: str, start_time: str, end_time: str,
+                            team_name: str,  emp_code: str, emp_name: str):
+    query = """
+        EXEC USP_GW_MEET_UPDATE_SCHEDULE ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    """
+    params = (seq_no, resv_type, room_name, room_floor, meet_type, subject, sch_date, sch_end_date, start_time, end_time, team_name, emp_code, emp_name)
+    result = db.execute_query(query, params)
+
+    if result == "중복":
+        result = "이미 예약된 시간입니다."
+    else:
+        result = "예약이 수정되었습니다."
 
     return result
