@@ -17,4 +17,4 @@ def register_tools(mcp):
         Returns:
             dict: A dictionary containing customer information.
         """
-        return await customer_service.search_db(name=name, phone=phone, email=email)
+        return await customer_service.cus_info_search_db(name=name, phone=phone, email=email)

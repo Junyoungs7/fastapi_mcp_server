@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from dbconnection.diablo import init_db_connection, close_db_connection
 import tools.customer_tool as customer_tool
 import tools.emp_tool as emp_tool
+import tools.groupware_tool as groupware_tool
 
 load_dotenv()
 
@@ -20,6 +21,7 @@ mcp = FastMCP("fastapi-mcp-server")
 
 customer_tool.register_tools(mcp)
 emp_tool.register_tools(mcp)
+groupware_tool.register_tools(mcp)
 
 
 # Initialize the database connection
