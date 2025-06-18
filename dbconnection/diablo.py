@@ -31,17 +31,17 @@ class DBConnectionManager:
         try:
             cursor = self.connection.cursor()
             cursor.execute(query, params)
-            
-            # COMMIT 필요 시
-            self.connection.commit()
 
-            # 결과가 있는 경우만 fetch 처리
+            # SELECT 쿼리가 아니면 commit 호출
+            if not query.strip().lower().startswith("select"):
+                self.connection.commit()
+
             if cursor.description is not None:
                 columns = [column[0] for column in cursor.description]
                 rows = cursor.fetchall()
                 return [dict(zip(columns, row)) for row in rows] if rows else []
 
-            return None  # 혹은 "성공" 등 필요에 맞게
+            return None
         except pyodbc.Error as e:
             raise HTTPException(status_code=500, detail=f"쿼리 실행 실패: {str(e)}")
 
